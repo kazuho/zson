@@ -1,6 +1,6 @@
 {
   "name": "zson",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "binary JSON, compact and with support for streaming",
   "main": "zson.js",
   "directories": {
