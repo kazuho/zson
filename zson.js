@@ -25,6 +25,16 @@ function Encoder(pushCb) {
 	this.encodeFloat = this.encodeFloat64; // by default
 }
 
+Encoder.encode = function (src) {
+	var output = [];
+	new Encoder(function (octet) { output.push(octet); }).encode(src);
+	var typedOutput = new Uint8Array(output.length);
+	for (var i = 0; i != output.length; ++i) {
+		typedOutput[i] = output[i];
+	}
+	return typedOutput;
+};
+
 Encoder.prototype.encode = function encode(src) {
 	switch (typeof src) {
 	case "number":
@@ -39,19 +49,11 @@ Encoder.prototype.encode = function encode(src) {
 		break;
 	case "object":
 		if (src === null) {
-			this._encodeNull();
+			this.encodeNull();
 		} else if (src instanceof Array) {
 			this.encodeArray(src);
 		} else {
-			var $this = this;
-			this.encodeObject(function () {
-				for (var k in src) {
-					if (src.hasOwnProperty(k)) {
-						$this.encodeKey(k);
-						$this.encode(src[k]);
-					}
-				}
-			});
+			this.encodeObject(src);
 		}
 		break;
 	case "boolean":
@@ -67,7 +69,7 @@ Encoder.prototype.encode = function encode(src) {
 };
 
 Encoder.prototype.encodeInt = function encodeInt(src) {
-	var srcAbs = src >= 0 ? src : -src;
+	var srcAbs = src >= 0 ? src : -src - 1;
 	if (srcAbs < 64 /* 2^6 */) {
 		this.push(src & 0x7f);
 	} else if (srcAbs < 8192 /* 2^13 */) {
@@ -75,30 +77,29 @@ Encoder.prototype.encodeInt = function encodeInt(src) {
 		this.push(src & 0xff);
 	} else if (srcAbs < 1048576 /* 2^20 */) {
 		this.push(0xc0 | ((src >> 16) & 0x1f));
-		this.push((src >> 8) | 0xff);
+		this.push((src >> 8) & 0xff);
 		this.push(src & 0xff);
 	} else if (srcAbs < 134217728 /* 2^27 */) {
 		this.push(0xe0 | ((src >> 24) & 0xf));
-		this.push((src >> 16) | 0xff);
-		this.push((src >> 8) | 0xff);
+		this.push((src >> 16) & 0xff);
+		this.push((src >> 8) & 0xff);
 		this.push(src & 0xff);
 	} else {
 		this.push(0xf0);
-		this.push((src >> 24) | 0xff);
-		this.push((src >> 16) | 0xff);
-		this.push((src >> 8) | 0xff);
+		this.push((src >> 24) & 0xff);
+		this.push((src >> 16) & 0xff);
+		this.push((src >> 8) & 0xff);
 		this.push(src & 0xff);
 	}
 };
 
 Encoder.prototype.encodeFloat64 = function () {
-	var floatView = new Float64Array(1);
-	var byteView = new Uint8Array(floatView.buffer);
+	var view = new DataView(new ArrayBuffer(8));
 	return function encodeFloat64(src) {
 		this.push(0xf2);
-		floatView[0] = src;
+		view.setFloat64(0, src);
 		for (var i = 0; i != 8; ++i) {
-			this.push(byteView[i]);
+			this.push(view.getUint8(i));
 		}
 	};
 }();
@@ -125,9 +126,22 @@ Encoder.prototype.encodeArray = function encodeArray(src) {
 
 Encoder.prototype.encodeObject = function encodeObject(src) {
 	this.push(0xf7);
-	cb();
+	if (typeof src === "function") {
+		src(); // callback style
+	} else {
+		for (var k in src) {
+			if (src.hasOwnProperty(k)) {
+				this.encodeKey(k);
+				this.encode(src[k]);
+			}
+		}
+	}
 	this.push(0xff);
+};
 
+Encoder.prototype.encodeKey = function encodeKey(src) {
+	this.appendString(src);
+	this.push(0xff);
 };
 
 Encoder.prototype.encodeString = function encodeString(src) {
@@ -155,4 +169,9 @@ Encoder.prototype.appendString = function appendString(src) {
 			this.push(0x80 | (code & 0x3f));
 		}
 	}
+};
+
+module.exports = {
+	Encoder: Encoder,
+	encode: Encoder.encode
 };
