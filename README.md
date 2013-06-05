@@ -19,8 +19,8 @@ Format
 <tr><td>110xxxxx [byte] [byte]</td><td>21-bit signed integer (-1048576 ~ 1048575)</td></tr>
 <tr><td>1110xxxx [byte] [byte] [byte]</td><td>28-bit signed integer (-134217728 ~ 134217727)</td></tr>
 <tr><td>11110000 [byte] [byte] [byte] [byte]</td><td>32-bit signed integer</td></tr>
-<tr><td>11110001 [byte] [byte] [byte] [byte]</td><td>IEE754 float (32-bit)</td></tr>
-<tr><td>11110010 8*[byte]</td><td>IEE754 float (64-bit)</td></tr>
+<tr><td>11110001 [byte] [byte] [byte] [byte]</td><td>IEEE754 float (32-bit)</td></tr>
+<tr><td>11110010 8*[byte]</td><td>IEEE754 float (64-bit)</td></tr>
 <tr><td>11110011</td><td>null</td></tr>
 <tr><td>11110100</td><td>false</td></tr>
 <tr><td>11110101</td><td>true</td></tr>
