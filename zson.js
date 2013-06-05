@@ -29,7 +29,7 @@ function Encoder(pushCb, opts) {
 			this.encodeFloat = this.encodeFloat32;
 		}
 		if (opts.CUSTOM_ENCODER) {
-			this.customEncoder = opts.CUSTOM_ENCODER;
+			this.encode = opts.CUSTOM_ENCODER;
 		}
 	}
 }
@@ -45,9 +45,6 @@ Encoder.encode = function (src, opts) {
 };
 
 Encoder.prototype.encode = function encode(src) {
-	if (this.customEncoder && this.customEncoder(src)) {
-		return;
-	}
 	switch (typeof src) {
 	case "number":
 		if ((src | 0) === src) {

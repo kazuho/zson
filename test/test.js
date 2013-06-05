@@ -90,17 +90,16 @@ describe("Encoder", function () {
 			var stringMap = {};
 			var encoded = zson.encode([ "abc", "def", "abc", "def" ], {
 				CUSTOM_ENCODER: function (v) {
-					if (typeof(v) !== "string") {
-						return false;
+					if (typeof(v) === "string") {
+						if (stringMap.hasOwnProperty(v)) {
+							this.push(zson.CUSTOM_TAGS[0]);
+							this.encode(stringMap[v]);
+							return;
+						} else {
+							stringMap[v] = Object.keys(stringMap).length;
+						}
 					}
-					if (stringMap.hasOwnProperty(v)) {
-						this.push(zson.CUSTOM_TAGS[0]);
-						this.encode(stringMap[v]);
-						return true;
-					} else {
-						stringMap[v] = Object.keys(stringMap).length;
-						return false;
-					}
+					zson.Encoder.prototype.encode.call(this, v);
 				}
 			});
 			assert.deepEqual(encoded, toUint8Array([ 0xfd, 0xfc, 0x61, 0x62, 0x63, 0xff, 0xfc, 0x64, 0x65, 0x66, 0xff, 0xf6, 0x00, 0xf6, 0x01, 0xff ]));
