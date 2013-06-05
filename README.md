@@ -1,4 +1,4 @@
-ZSON - zipped streaming object notation
+ZSON - binary JSON, compact and with support for streaming
 =======================================
 
 Introduction
