@@ -74,6 +74,7 @@ var dedupingDecoder = function () {
     var stringList = [];
     return function () {
         if (this.peek() === zson.CUSTOM_TAGS[0]) {
+            this.shift();
             return stringList[this.decode()];
         }
         var decoded = zson.Decoder.prototype.decode.call(this);
