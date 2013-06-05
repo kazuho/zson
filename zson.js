@@ -23,8 +23,14 @@
 function Encoder(pushCb, opts) {
 	this.push = pushCb;
 	this.encodeFloat = this.encodeFloat64; // default
-	if (opts && opts.USE_FLOAT32) {
-		this.encodeFloat = this.encodeFloat32;
+	this.customEncoder = null; // default
+	if (opts) {
+		if (opts.USE_FLOAT32) {
+			this.encodeFloat = this.encodeFloat32;
+		}
+		if (opts.CUSTOM_ENCODER) {
+			this.customEncoder = opts.CUSTOM_ENCODER;
+		}
 	}
 }
 
@@ -39,6 +45,9 @@ Encoder.encode = function (src, opts) {
 };
 
 Encoder.prototype.encode = function encode(src) {
+	if (this.customEncoder && this.customEncoder(src)) {
+		return;
+	}
 	switch (typeof src) {
 	case "number":
 		if ((src | 0) === src) {
@@ -185,105 +194,130 @@ Encoder.prototype.appendString = function appendString(src) {
 	}
 };
 
-function Decoder() {
-	throw new Error("not implemented");
+function Decoder(src, opts) {
+	if (opts) {
+		if (opts.CUSTOM_DECODER) {
+			this.decode = opts.CUSTOM_DECODER;
+		}
+	}
+	// src is a function that returns the next char
+	if (typeof src !== "function") {
+		var offset = 0;
+		src = function () {
+			if (offset == this.length) {
+				throw new Error("unexpected end-of-stream");
+			}
+			return this[offset++];
+		}.bind(src);
+	}
+	var peeked = null;
+	this.shift = function () {
+		if (peeked !== null) {
+			var ret = peeked;
+			peeked = null;
+			return ret;
+		}
+		return src();
+		return s;
+	};
+	this.peek = function () {
+		if (peeked === null) {
+			peeked = src();
+		}
+		return peeked;
+	};
 }
 
-Decoder.decode = function () {
-	// synchronous decoder
+Decoder.prototype.decode = function () {
 	var view = new DataView(new ArrayBuffer(8));
-	return function decode(encoded) {
-		var offset = 0;
-		function _shift() {
-			if (offset >= encoded.length) {
-				throw new Error("corrupt stream");
-			}
-			return encoded[offset++];
-		}
-		function _unshift() {
-			--offset;
-		}
-		function _decode() {
-			var tag = _shift();
-			if (tag < 0xf0) {
-				if (tag < 0x80) {
-					return (tag << 25) >> 25;
-				} else if (tag < 0xc0) {
-					return ((tag << 26) | (_shift() << 18)) >> 18;
-				} else if (tag < 0xe0) {
-					return ((tag << 27) | (_shift() << 19) | (_shift() << 11)) >> 11;
-				} else {
-					return ((tag << 28) | (_shift() << 20) | (_shift() << 12) | (_shift() << 4)) >> 4;
-				}
+	return function decodeCore() {
+		var tag = this.shift();
+		if (tag < 0xf0) {
+			if (tag < 0x80) {
+				return (tag << 25) >> 25;
+			} else if (tag < 0xc0) {
+				return ((tag << 26) | (this.shift() << 18)) >> 18;
+			} else if (tag < 0xe0) {
+				return ((tag << 27) | (this.shift() << 19) | (this.shift() << 11)) >> 11;
 			} else {
-				switch (tag) {
-				case 0xf0:
-					return (_shift() << 24) | (_shift() << 16) | (_shift() << 8) | _shift();
-				case 0xf1:
-					for (var i = 0; i < 4; ++i) {
-						view.setUint8(i, _shift());
-					}
-					return view.getFloat32(0);
-				case 0xf2:
-					for (var i = 0; i < 8; ++i) {
-						view.setUint8(i, _shift());
-					}
-					return view.getFloat64(0);
-				case 0xf3:
-					return null;
-				case 0xf4:
-					return false;
-				case 0xf5:
-					return true;
-				case 0xfc:
-					return _decodeString();
-				case 0xfd:
-					return _decodeArray();
-				case 0xfe:
-					return _decodeObject();
-				default:
-					throw new Error("unexpected tag:" + tag + " found at " + offset);
+				return ((tag << 28) | (this.shift() << 20) | (this.shift() << 12) | (this.shift() << 4)) >> 4;
+			}
+		} else {
+			switch (tag) {
+			case 0xf0:
+				return (this.shift() << 24) | (this.shift() << 16) | (this.shift() << 8) | this.shift();
+			case 0xf1:
+				for (var i = 0; i < 4; ++i) {
+					view.setUint8(i, this.shift());
 				}
-			}
-		}
-		function _decodeString() {
-			var ret = [], ch;
-			while ((ch = _shift()) != 0xff) {
-				if (ch < 0x80) {
-					ret.push(ch);
-				} else if (ch < 0xe0) {
-					ret.push(((ch & 0x1f) << 6) | (_shift() & 0x3f));
-				} else if (ch < 0xf0) {
-					ret.push(((ch & 0xf) << 12) | ((_shift() & 0x3f) << 6) | (_shift() & 0x3f));
-				} else {
-					throw new Error("FIXME support surrogate pair");
+				return view.getFloat32(0);
+			case 0xf2:
+				for (var i = 0; i < 8; ++i) {
+					view.setUint8(i, this.shift());
 				}
+				return view.getFloat64(0);
+			case 0xf3:
+				return null;
+			case 0xf4:
+				return false;
+			case 0xf5:
+				return true;
+			case 0xfc:
+				return this._decodeString();
+			case 0xfd:
+				return this._decodeArray();
+			case 0xfe:
+				return this._decodeObject();
+			default:
+				throw new Error("unexpected tag:" + tag);
 			}
-			return String.fromCharCode.apply(null, ret);
 		}
-		function _decodeArray() {
-			var ret = [];
-			while (_shift() != 0xff) {
-				_unshift();
-				ret.push(_decode());
-			}
-			return ret;
-		}
-		function _decodeObject() {
-			var ret = {};
-			while (_shift() != 0xff) {
-				_unshift();
-				var value = _decode();
-				var key = _decodeString();
-				ret[key] = value;
-			}
-			return ret;
-		}
-		return _decode();
 	};
 }();
 
+Decoder.prototype._decodeString = function decodeString() {
+	var ret = [], ch;
+	while ((ch = this.shift()) !== 0xff) {
+		if (ch < 0x80) {
+			ret.push(ch);
+		} else if (ch < 0xe0) {
+			ret.push(((ch & 0x1f) << 6) | (this.shift() & 0x3f));
+		} else if (ch < 0xf0) {
+			ret.push(((ch & 0xf) << 12) | ((this.shift() & 0x3f) << 6) | (this.shift() & 0x3f));
+		} else {
+			throw new Error("FIXME support surrogate pair");
+		}
+	}
+	return String.fromCharCode.apply(null, ret);
+};
+
+Decoder.prototype._decodeArray = function decodeArray() {
+	var ret = [];
+	while (this.peek() !== 0xff) {
+		ret.push(this.decode());
+	}
+	this.shift();
+	return ret;
+};
+
+Decoder.prototype._decodeObject = function decodeObject() {
+	var ret = {};
+	while (this.peek() !== 0xff) {
+		var value = this.decode();
+		var key = this._decodeString();
+		ret[key] = value;
+	}
+	this.shift();
+	return ret;
+}
+
+Decoder.decode = function decode(encoded, opts) {
+	return new Decoder(encoded, opts).decode();
+};
+
+
 module.exports = {
+	CUSTOM_TAGS: [ 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb ],
 	Encoder: Encoder,
 	encode: Encoder.encode,
 	Decoder: Decoder,

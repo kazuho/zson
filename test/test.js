@@ -86,11 +86,30 @@ describe("Encoder", function () {
 		it("should encode object", function() {
 			assert.deepEqual(zson.encode({ a: 1 }), toUint8Array([ 0xfe, 1, 0x61, 0xff, 0xff ]));
 		});
+		it("should support custom encoder", function () {
+			var stringMap = {};
+			var encoded = zson.encode([ "abc", "def", "abc", "def" ], {
+				CUSTOM_ENCODER: function (v) {
+					if (typeof(v) !== "string") {
+						return false;
+					}
+					if (stringMap.hasOwnProperty(v)) {
+						this.push(zson.CUSTOM_TAGS[0]);
+						this.encode(stringMap[v]);
+						return true;
+					} else {
+						stringMap[v] = Object.keys(stringMap).length;
+						return false;
+					}
+				}
+			});
+			assert.deepEqual(encoded, toUint8Array([ 0xfd, 0xfc, 0x61, 0x62, 0x63, 0xff, 0xfc, 0x64, 0x65, 0x66, 0xff, 0xf6, 0x00, 0xf6, 0x01, 0xff ]));
+		});
 	});
 });
 
 describe("Decoder", function () {
-	describe("encode", function () {
+	describe("decode", function () {
 		it("should decode 1-byte number", function () {
 			assert.equal(zson.decode([ 0 ]), 0);
 			assert.equal(zson.decode([ 1 ]), 1);
@@ -141,6 +160,24 @@ describe("Decoder", function () {
 		});
 		it("should decode object", function() {
 			assert.deepEqual(zson.decode([ 0xfe, 1, 0x61, 0xff, 0xff ]), { a: 1 });
+		});
+		it("should support custom decoder", function () {
+			var stringList = [];
+			var decoded = zson.decode([ 0xfd, 0xfc, 0x61, 0x62, 0x63, 0xff, 0xfc, 0x64, 0x65, 0x66, 0xff, 0xf6, 0x00, 0xf6, 0x01, 0xff ], {
+				CUSTOM_DECODER: function () {
+					if (this.peek() === zson.CUSTOM_TAGS[0]) {
+						this.shift();
+						var ret = stringList[this.decode()];
+					} else {
+						ret = zson.Decoder.prototype.decode.call(this);
+						if (typeof ret === "string") {
+							stringList.push(ret);
+						}
+					}
+					return ret;
+				}
+			});
+			assert.deepEqual(decoded, [ "abc", "def", "abc", "def" ]);
 		});
 	});
 });
