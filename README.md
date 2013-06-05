@@ -1,10 +1,10 @@
-ZSON - binary JSON, compact and with support for streaming
+ZSON
 =======================================
 
 Introduction
 ------------
 
-ZSON is a yet-another binary object notation similar to BSON or MessagePack.  The difference from the two are that ZSON is designed to be streamable while being compact.
+ZSON is binary-based JSON. It is similar to BSON or MessagePack; the difference from the two is that ZSON is designed to be streamable while being compact.
 
 LICENSE
 -------
