@@ -69,9 +69,9 @@ describe("Encoder", function () {
 			assert.deepEqual(zson.encode(-118.625), toUint8Array([ 0xf2, 0xc0, 0x5d, 0xa8, 0x00, 0x00, 0x00, 0x00, 0x00 ]));
 		});
 		it("should encode string", function () {
-			assert.deepEqual(zson.encode(""), toUint8Array([ 0xf8, 0xff ]));
-			assert.deepEqual(zson.encode("hello"), toUint8Array([ 0xf8, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0xff ]));
-			assert.deepEqual(zson.encode("\u65e5\u672c\u8a9e"), toUint8Array([ 0xf8, 0xe6, 0x97, 0xa5, 0xe6, 0x9c, 0xac, 0xe8, 0xaa, 0x9e, 0xff ]));
+			assert.deepEqual(zson.encode(""), toUint8Array([ 0xfc, 0xff ]));
+			assert.deepEqual(zson.encode("hello"), toUint8Array([ 0xfc, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0xff ]));
+			assert.deepEqual(zson.encode("\u65e5\u672c\u8a9e"), toUint8Array([ 0xfc, 0xe6, 0x97, 0xa5, 0xe6, 0x9c, 0xac, 0xe8, 0xaa, 0x9e, 0xff ]));
 		});
 		it("should encode other scalars", function () {
 			assert.deepEqual(zson.encode((function () {})() /* undefined */), toUint8Array([ 0xf3 ]));
@@ -80,10 +80,10 @@ describe("Encoder", function () {
 			assert.deepEqual(zson.encode(true), toUint8Array([ 0xf5 ]));
 		});
 		it("should encode array", function () {
-			assert.deepEqual(zson.encode([ 1, 2, 3 ]), toUint8Array([ 0xf6, 1, 2, 3, 0xff ]));
+			assert.deepEqual(zson.encode([ 1, 2, 3 ]), toUint8Array([ 0xfd, 1, 2, 3, 0xff ]));
 		});
 		it("should encode object", function() {
-			assert.deepEqual(zson.encode({ a: 1 }), toUint8Array([ 0xf7, 0x61, 0xff, 1, 0xff ]));
+			assert.deepEqual(zson.encode({ a: 1 }), toUint8Array([ 0xfe, 0x61, 0xff, 1, 0xff ]));
 		});
 	});
 });

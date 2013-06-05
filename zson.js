@@ -113,7 +113,7 @@ Encoder.prototype.encodeBoolean = function encodeBoolean(src) {
 };
 
 Encoder.prototype.encodeArray = function encodeArray(src) {
-	this.push(0xf6);
+	this.push(0xfd);
 	if (typeof src === "function") {
 		src(); // callback style
 	} else {
@@ -125,7 +125,7 @@ Encoder.prototype.encodeArray = function encodeArray(src) {
 };
 
 Encoder.prototype.encodeObject = function encodeObject(src) {
-	this.push(0xf7);
+	this.push(0xfe);
 	if (typeof src === "function") {
 		src(); // callback style
 	} else {
@@ -145,7 +145,7 @@ Encoder.prototype.encodeKey = function encodeKey(src) {
 };
 
 Encoder.prototype.encodeString = function encodeString(src) {
-	this.push(0xf8);
+	this.push(0xfc);
 	if (typeof src === "function") {
 		src();
 	} else {
