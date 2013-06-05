@@ -50,6 +50,44 @@ var decoder = new zson.Decoder(getChar);
 var data = decoder.decode();
 ```
 
+Custom codec:
+
+```
+// dedupe strings in the stream
+var dedupingEncoder = function () {
+    var stringMap = {};
+    return function (v) {
+        if (typeof v === "string") {
+            if (stringMap.hasOwnProperty(v)) {
+                this.push(zson.CUSTOM_TAGS[0]);
+                this.encode(stringMap[v]);
+                return;
+            } else {
+                stringMap[v] = Object.keys(stringMap).length;
+            }
+        }
+        return zson.Encoder.prototype.encode.call(this, v);
+    };
+};
+
+var dedupingDecoder = function () {
+    var stringList = [];
+    return function () {
+        if (this.peek() === zson.CUSTOM_TAGS[0]) {
+            return stringList[this.decode()];
+        }
+        var decoded = zson.Decoder.prototype.decode.call(this);
+        if (typeof decoded === "string") {
+            stringList.push(decoded);
+        }
+        return decoded;
+    };
+};
+
+var encoded = zson.encode(src, { CUSTOM_ENCODER: dedupingEncoder });
+var decoded = zson.decode(encoded, { CUSTOM_DECODER: dedupingDecoder });
+```
+
 Format
 ------
 
