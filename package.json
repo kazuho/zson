@@ -1,0 +1,23 @@
+{
+  "name": "zson",
+  "version": "0.1.1",
+  "description": "binary JSON, compact and with support for streaming",
+  "main": "zson.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kazuho/zson.git"
+  },
+  "keywords": [
+    "JSON"
+  ],
+  "author": "Kazuho Oku",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "gitHead": "950200f65f920c9720fd58aa3dead001cc3cfe0d"
+}
