@@ -42,7 +42,7 @@ describe("Encoder", function () {
 			assert.deepEqual(zson.encode(-64), toUint8Array([ 64 ]));
 		});
 		it("should encode 2-byte number", function () {
-			assert.deepEqual(zson.encode(64), toUint8Array([ 0x80, 64 ]));
+			assert.deepEqual(zson.encode(64), toUint8Array([ 0x80, 0x40 ]));
 			assert.deepEqual(zson.encode(8191), toUint8Array([ 0x9f, 0xff ]));
 			assert.deepEqual(zson.encode(-65), toUint8Array([ 0xbf, 0xbf ]));
 			assert.deepEqual(zson.encode(-8192), toUint8Array([ 0xa0, 0x00 ]));
@@ -84,6 +84,62 @@ describe("Encoder", function () {
 		});
 		it("should encode object", function() {
 			assert.deepEqual(zson.encode({ a: 1 }), toUint8Array([ 0xfe, 1, 0x61, 0xff, 0xff ]));
+		});
+	});
+});
+
+describe("Decoder", function () {
+	describe("encode", function () {
+		it("should decode 1-byte number", function () {
+			assert.equal(zson.decode([ 0 ]), 0);
+			assert.equal(zson.decode([ 1 ]), 1);
+			assert.equal(zson.decode([ 63 ]), 63);
+			assert.equal(zson.decode([ 127 ]), -1);
+			assert.equal(zson.decode([ 64 ]), -64);
+		});
+		it("should decode 2-byte number", function () {
+			assert.equal(zson.decode([ 0x80, 0x40 ]), 64);
+			assert.equal(zson.decode([ 0x9f, 0xff ]), 8191);
+			assert.equal(zson.decode([ 0xbf, 0xbf ]), -65);
+			assert.equal(zson.decode([ 0xa0, 0x00 ]), -8192);
+		});
+		it("should decode 3-byte number", function () {
+			assert.equal(zson.decode([ 0xc0, 0x20, 0x00 ]), 8192);
+			assert.equal(zson.decode([ 0xcf, 0xff, 0xff ]), 1048575);
+			assert.equal(zson.decode([ 0xdf, 0xdf, 0xff ]), -8193);
+			assert.equal(zson.decode([ 0xd0, 0x00, 0x00 ]), -1048576);
+		});
+		it("should decode 4-byte number", function () {
+			assert.equal(zson.decode([ 0xe0, 0x10, 0x00, 0x00 ]), 1048576);
+			assert.equal(zson.decode([ 0xe7, 0xff, 0xff, 0xff ]), 134217727);
+			assert.equal(zson.decode([ 0xef, 0xef, 0xff, 0xff ]), -1048577);
+			assert.equal(zson.decode([ 0xe8, 0x00, 0x00, 0x00 ]), -134217728);
+		});
+		it("should decode 5-byte number", function () {
+			assert.equal(zson.decode([ 0xf0, 0x08, 0x00, 0x00, 0x00 ]), 134217728);
+			assert.equal(zson.decode([ 0xf0, 0x7f, 0xff, 0xff, 0xff ]), 2147483647);
+			assert.equal(zson.decode([ 0xf0, 0xf7, 0xff, 0xff, 0xff ]), -134217729);
+			assert.equal(zson.decode([ 0xf0, 0x80, 0x00, 0x00, 0x00 ]), -2147483648);
+		});
+		it("should decode float", function () {
+			assert.equal(zson.decode([ 0xf1, 0xc2, 0xed, 0x40, 0x00 ]), -118.625);
+			assert.equal(zson.decode([ 0xf2, 0xc0, 0x5d, 0xa8, 0x00, 0x00, 0x00, 0x00, 0x00 ]), -118.625);
+		});
+		it("should decode string", function () {
+			assert.equal(zson.decode([ 0xfc, 0xff ]), "");
+			assert.equal(zson.decode([ 0xfc, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0xff ]), "hello");
+			assert.equal(zson.decode([ 0xfc, 0xe6, 0x97, 0xa5, 0xe6, 0x9c, 0xac, 0xe8, 0xaa, 0x9e, 0xff ]), "\u65e5\u672c\u8a9e");
+		});
+		it("should decode other scalars", function () {
+			assert.equal(zson.decode([ 0xf3 ]), null);
+			assert.equal(zson.decode([ 0xf4 ]), false);
+			assert.equal(zson.decode([ 0xf5 ]), true);
+		});
+		it("should decode array", function () {
+			assert.deepEqual(zson.decode([ 0xfd, 1, 2, 3, 0xff ]), [ 1, 2, 3 ]);
+		});
+		it("should decode object", function() {
+			assert.deepEqual(zson.decode([ 0xfe, 1, 0x61, 0xff, 0xff ]), { a: 1 });
 		});
 	});
 });

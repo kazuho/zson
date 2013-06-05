@@ -171,7 +171,107 @@ Encoder.prototype.appendString = function appendString(src) {
 	}
 };
 
+function Decoder() {
+	throw new Error("not implemented");
+}
+
+Decoder.decode = function () {
+	// synchronous decoder
+	var view = new DataView(new ArrayBuffer(8));
+	return function decode(encoded) {
+		var offset = 0;
+		function _shift() {
+			if (offset >= encoded.length) {
+				throw new Error("corrupt stream");
+			}
+			return encoded[offset++];
+		}
+		function _unshift() {
+			--offset;
+		}
+		function _decode() {
+			var tag = _shift();
+			if (tag < 0xf0) {
+				if (tag < 0x80) {
+					return (tag << 25) >> 25;
+				} else if (tag < 0xc0) {
+					return ((tag << 26) | (_shift() << 18)) >> 18;
+				} else if (tag < 0xe0) {
+					return ((tag << 27) | (_shift() << 19) | (_shift() << 11)) >> 11;
+				} else {
+					return ((tag << 28) | (_shift() << 20) | (_shift() << 12) | (_shift() << 4)) >> 4;
+				}
+			} else {
+				switch (tag) {
+				case 0xf0:
+					return (_shift() << 24) | (_shift() << 16) | (_shift() << 8) | _shift();
+				case 0xf1:
+					for (var i = 0; i < 4; ++i) {
+						view.setUint8(i, _shift());
+					}
+					return view.getFloat32(0);
+				case 0xf2:
+					for (var i = 0; i < 8; ++i) {
+						view.setUint8(i, _shift());
+					}
+					return view.getFloat64(0);
+				case 0xf3:
+					return null;
+				case 0xf4:
+					return false;
+				case 0xf5:
+					return true;
+				case 0xfc:
+					return _decodeString();
+				case 0xfd:
+					return _decodeArray();
+				case 0xfe:
+					return _decodeObject();
+				default:
+					throw new Error("unexpected tag:" + tag + " found at " + offset);
+				}
+			}
+		}
+		function _decodeString() {
+			var ret = [], ch;
+			while ((ch = _shift()) != 0xff) {
+				if (ch < 0x80) {
+					ret.push(ch);
+				} else if (ch < 0xe0) {
+					ret.push(((ch & 0x1f) << 6) | (_shift() & 0x3f));
+				} else if (ch < 0xf0) {
+					ret.push(((ch & 0xf) << 12) | ((_shift() & 0x3f) << 6) | (_shift() & 0x3f));
+				} else {
+					throw new Error("FIXME support surrogate pair");
+				}
+			}
+			return String.fromCharCode.apply(null, ret);
+		}
+		function _decodeArray() {
+			var ret = [];
+			while (_shift() != 0xff) {
+				_unshift();
+				ret.push(_decode());
+			}
+			return ret;
+		}
+		function _decodeObject() {
+			var ret = {};
+			while (_shift() != 0xff) {
+				_unshift();
+				var value = _decode();
+				var key = _decodeString();
+				ret[key] = value;
+			}
+			return ret;
+		}
+		return _decode();
+	};
+}();
+
 module.exports = {
 	Encoder: Encoder,
-	encode: Encoder.encode
+	encode: Encoder.encode,
+	Decoder: Decoder,
+	decode: Decoder.decode
 };
