@@ -107,6 +107,7 @@ Format
 <tr><td>11110011</td><td>null</td></tr>
 <tr><td>11110100</td><td>false</td></tr>
 <tr><td>11110101</td><td>true</td></tr>
+<tr><td>11110110<br />11110111<br />11111000<br />11111001<br />11111010<br />11111011</td><td>extension points</td></tr>
 <tr><td>11111100 n*[byte] 11111111</td><td>UTF-8 string</td></tr>
 <tr><td>11111101</td><td>start of array</td></tr>
 <tr><td>11111110</td><td>start of object (repetition of value-key pairs, keys are raw UTF-8 strings terminated by 0xff)</td></tr>
