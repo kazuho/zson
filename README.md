@@ -6,6 +6,11 @@ Introduction
 
 ZSON is a yet-another binary object notation similar to BSON or MessagePack.  The difference from the two are that ZSON is designed to be streamable and at the same time of being compact.
 
+LICENSE
+-------
+
+ZSON is licensed under the MIT License.
+
 Format
 ------
 
