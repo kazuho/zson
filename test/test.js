@@ -83,7 +83,7 @@ describe("Encoder", function () {
 			assert.deepEqual(zson.encode([ 1, 2, 3 ]), toUint8Array([ 0xfd, 1, 2, 3, 0xff ]));
 		});
 		it("should encode object", function() {
-			assert.deepEqual(zson.encode({ a: 1 }), toUint8Array([ 0xfe, 0x61, 0xff, 1, 0xff ]));
+			assert.deepEqual(zson.encode({ a: 1 }), toUint8Array([ 0xfe, 1, 0x61, 0xff, 0xff ]));
 		});
 	});
 });

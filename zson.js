@@ -131,16 +131,16 @@ Encoder.prototype.encodeObject = function encodeObject(src) {
 	} else {
 		for (var k in src) {
 			if (src.hasOwnProperty(k)) {
-				this.encodeKey(k);
-				this.encode(src[k]);
+				this.encodeKeyValue(k, src[k]);
 			}
 		}
 	}
 	this.push(0xff);
 };
 
-Encoder.prototype.encodeKey = function encodeKey(src) {
-	this.appendString(src);
+Encoder.prototype.encodeKeyValue = function encodeKey(key, value) {
+	this.encode(value);
+	this.appendString(key);
 	this.push(0xff);
 };
 
