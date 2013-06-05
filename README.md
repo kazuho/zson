@@ -8,14 +8,22 @@ ZSON is licensed under the MIT License.
 USAGE
 -----
 
+Load:
+
 ```
 var zson = require("zson");
+```
 
-// blocking codec
+Simple encode / decode:
+
+```
 var encoded = zson.encode({ hello: "world" });
 var decoded = zson.decode(encoded);
+```
 
-// streaming encoder
+Streaming encode:
+
+```
 function pushCb(octet) {
     ...
 }
@@ -32,6 +40,15 @@ encoder.encodeObject(function () {
 });
 ```
 
+Streaming decode:
+
+```
+function getChar() {
+    ...
+}
+var decoder = new zson.Decoder(getChar);
+var data = decoder.decode();
+```
 
 Format
 ------
