@@ -20,14 +20,17 @@
  * IN THE SOFTWARE.
  */
 
-function Encoder(pushCb) {
+function Encoder(pushCb, opts) {
 	this.push = pushCb;
-	this.encodeFloat = this.encodeFloat64; // by default
+	this.encodeFloat = this.encodeFloat64; // default
+	if (opts && opts.USE_FLOAT32) {
+		this.encodeFloat = this.encodeFloat32;
+	}
 }
 
-Encoder.encode = function (src) {
+Encoder.encode = function (src, opts) {
 	var output = [];
-	new Encoder(function (octet) { output.push(octet); }).encode(src);
+	new Encoder(function (octet) { output.push(octet); }, opts).encode(src);
 	var typedOutput = new Uint8Array(output.length);
 	for (var i = 0; i != output.length; ++i) {
 		typedOutput[i] = output[i];
@@ -92,6 +95,17 @@ Encoder.prototype.encodeInt = function encodeInt(src) {
 		this.push(src & 0xff);
 	}
 };
+
+Encoder.prototype.encodeFloat32 = function () {
+	var view = new DataView(new ArrayBuffer(4));
+	return function encodeFloat32(src) {
+		this.push(0xf1);
+		view.setFloat32(0, src);
+		for (var i = 0; i != 4; ++i) {
+			this.push(view.getUint8(i));
+		}
+	};
+}();
 
 Encoder.prototype.encodeFloat64 = function () {
 	var view = new DataView(new ArrayBuffer(8));

@@ -66,6 +66,7 @@ describe("Encoder", function () {
 			assert.deepEqual(zson.encode(-2147483648), toUint8Array([ 0xf0, 0x80, 0x00, 0x00, 0x00 ]));
 		});
 		it("should encode float", function () {
+			assert.deepEqual(zson.encode(-118.625, { USE_FLOAT32: true }), toUint8Array([ 0xf1, 0xc2, 0xed, 0x40, 0x00 ]));
 			assert.deepEqual(zson.encode(-118.625), toUint8Array([ 0xf2, 0xc0, 0x5d, 0xa8, 0x00, 0x00, 0x00, 0x00, 0x00 ]));
 		});
 		it("should encode string", function () {
