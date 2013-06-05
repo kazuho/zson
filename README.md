@@ -11,6 +11,34 @@ LICENSE
 
 ZSON is licensed under the MIT License.
 
+USAGE
+-----
+
+```
+var zson = require("zson");
+
+// blocking codec
+var encoded = zson.encode({ hello: "world" });
+var decoded = zson.decode(encoded);
+
+// streaming encoder
+function pushCb(octet) {
+    ...
+}
+var encoder = new zson.Encoder(pushCb);
+encoder.encodeArray(function () {
+    encoder.encode(1);
+    encoder.encode(2);
+    encoder.encode(3);
+    ...
+});
+encoder.encodeObject(function () {
+    encoder.encodeKeyValue("hello", "world");
+    ...
+});
+```
+
+
 Format
 ------
 
