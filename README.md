@@ -66,7 +66,7 @@ var dedupingEncoder = function () {
                 stringMap[v] = Object.keys(stringMap).length;
             }
         }
-        return zson.Encoder.prototype.encode.call(this, v);
+        return this.encodeCore(v);
     };
 };
 
@@ -77,7 +77,7 @@ var dedupingDecoder = function () {
             this.shift();
             return stringList[this.decode()];
         }
-        var decoded = zson.Decoder.prototype.decode.call(this);
+        var decoded = this.decodeCore();
         if (typeof decoded === "string") {
             stringList.push(decoded);
         }

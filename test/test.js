@@ -99,7 +99,7 @@ describe("Encoder", function () {
 							stringMap[v] = Object.keys(stringMap).length;
 						}
 					}
-					zson.Encoder.prototype.encode.call(this, v);
+					this.encodeCore(v);
 				}
 			});
 			assert.deepEqual(encoded, toUint8Array([ 0xfd, 0xfc, 0x61, 0x62, 0x63, 0xff, 0xfc, 0x64, 0x65, 0x66, 0xff, 0xf6, 0x00, 0xf6, 0x01, 0xff ]));
@@ -168,7 +168,7 @@ describe("Decoder", function () {
 						this.shift();
 						var ret = stringList[this.decode()];
 					} else {
-						ret = zson.Decoder.prototype.decode.call(this);
+						ret = this.decodeCore();
 						if (typeof ret === "string") {
 							stringList.push(ret);
 						}

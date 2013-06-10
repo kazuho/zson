@@ -44,7 +44,7 @@ Encoder.encode = function (src, opts) {
 	return typedOutput;
 };
 
-Encoder.prototype.encode = function encode(src) {
+Encoder.prototype.encodeCore = function encodeCore(src) {
 	switch (typeof src) {
 	case "number":
 		if ((src | 0) === src) {
@@ -76,6 +76,8 @@ Encoder.prototype.encode = function encode(src) {
 		throw new Error("cannot encode value of type:" + typeof src);
 	}
 };
+
+Encoder.prototype.encode = Encoder.prototype.encodeCore;
 
 Encoder.prototype.encodeInt = function encodeInt(src) {
 	var srcAbs = src >= 0 ? src : -src - 1;
@@ -225,7 +227,7 @@ function Decoder(src, opts) {
 	};
 }
 
-Decoder.prototype.decode = function () {
+Decoder.prototype.decodeCore = function () {
 	var view = new DataView(new ArrayBuffer(8));
 	return function decodeCore() {
 		var tag = this.shift();
@@ -271,6 +273,8 @@ Decoder.prototype.decode = function () {
 		}
 	};
 }();
+
+Decoder.prototype.decode = Decoder.prototype.decodeCore;
 
 Decoder.prototype._decodeString = function decodeString() {
 	var ret = [], ch;
